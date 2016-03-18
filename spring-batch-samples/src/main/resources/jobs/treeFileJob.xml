@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+		
+	<!-- This job is very similar to the multiLineJob in the line tokenize approach. -->	
+
+	<job id="treeFileJob" xmlns="http://www.springframework.org/schema/batch">
+		<step id="step1">
+			<tasklet>
+				<chunk reader="reader" writer="writer" commit-interval="1">
+					<streams>
+						<stream ref="fileItemReader" />
+					</streams>
+				</chunk>
+			</tasklet>
+		</step>
+	</job>
+
+	<bean id="reader"
+		class="org.springframework.batch.sample.domain.multiline.AggregateItemReader">
+		<property name="itemReader" ref="fileItemReader" />
+	</bean>
+
+	<bean id="writer" class="org.springframework.batch.sample.support.DummyItemWriter" />
+
+	<bean id="fileItemReader" class="org.springframework.batch.item.file.FlatFileItemReader">
+		<property name="lineMapper">
+			<bean class="org.springframework.batch.item.file.mapping.DefaultLineMapper">
+				<property name="lineTokenizer" ref="fixedFileDescriptor" />
+				<property name="fieldSetMapper">
+					<bean
+						class="org.springframework.batch.sample.domain.multiline.AggregateItemFieldSetMapper">
+						<property name="delegate" ref="tradeLineMapper" />
+					</bean>
+				</property>
+			</bean>
+		</property>
+	</bean>
+	
+	<bean id="treeFileLineMapper"
+	class="org.springframework.batch.item.file.mapping.PatternMatchingCompositeLineMapper">
+	<property name="tokenizers">
+		<map>
+			<entry key="1*" value-ref="enterpriseTokenizer" />
+			<entry key="2*" value-ref="departmentTokenizer" />
+			<entry key="3*" value-ref="workerTokenizer" />
+		</map>
+	</property>
+	<property name="fieldSetMappers">
+		<map>
+			<entry key="1*" value-ref="enterpriseFieldSetMapper" />
+			<entry key="2*" value-ref="departmentFieldSetMapper" />
+			<entry key="3*" value-ref="workerFieldSetMapper" />
+		</map>
+	</property>
+</bean>
+
+	<bean id="fixedFileDescriptor"
+		class="org.springframework.batch.item.file.transform.PatternMatchingCompositeLineTokenizer">
+		<property name="tokenizers">
+			<map>
+				<entry key="1*" value-ref="enterpriseTokenizer" />
+				<entry key="2*" value-ref="departmentTokenizer" />
+				<entry key="3*" value-ref="workerTokenizer" />
+			</map>
+		</property>
+	</bean>
+
+	<bean id="enterpriseTokenizer"
+		class="org.springframework.batch.item.file.transform.FixedLengthTokenizer">
+		<property name="names" value="type,name" />
+		<property name="columns" value="1, 2" />
+	</bean>
+
+	<bean id="departmentTokenizer"
+		class="org.springframework.batch.item.file.transform.FixedLengthTokenizer">
+		<property name="names" value="type,name" />
+		<property name="columns" value="1, 2" />
+	</bean>
+
+	<bean id="workerTokenizer"
+		class="org.springframework.batch.item.file.transform.FixedLengthTokenizer">
+		<property name="names" value="type,name" />
+		<property name="columns" value="1, 2" />
+	</bean>
+</beans>
