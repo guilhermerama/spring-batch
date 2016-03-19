@@ -6,38 +6,31 @@
 		
 	<!-- This job is very similar to the multiLineJob in the line tokenize approach. -->	
 
-	<job id="treeFileJob" xmlns="http://www.springframework.org/schema/batch">
+	<job id="treeFileJob" xmlns="http://www.springframework.org/schema/batch" restartable="false">
 		<step id="step1">
 			<tasklet>
-				<chunk reader="reader" writer="writer" commit-interval="1">
-					<streams>
-						<stream ref="fileItemReader" />
-					</streams>
-				</chunk>
+				<chunk reader="reader" writer="writer" commit-interval="1" />
 			</tasklet>
 		</step>
 	</job>
 
 	<bean id="reader"
-		class="org.springframework.batch.sample.domain.multiline.AggregateItemReader">
-		<property name="itemReader" ref="fileItemReader" />
+		class="org.springframework.batch.sample.domain.treereader.TreeFileReader">
+		<property name="delegate" ref="multiFileReader" />
+	</bean>
+	
+	<bean id="multiFileReader"
+		class="org.springframework.batch.item.file.MultiResourceItemReader">
+		<property name="delegate" ref="fileItemReader" />
+		<property name="resources" value="classpath:data/treeFile/job/input*.txt" />
 	</bean>
 
-	<bean id="writer" class="org.springframework.batch.sample.support.DummyItemWriter" />
 
 	<bean id="fileItemReader" class="org.springframework.batch.item.file.FlatFileItemReader">
-		<property name="lineMapper">
-			<bean class="org.springframework.batch.item.file.mapping.DefaultLineMapper">
-				<property name="lineTokenizer" ref="fixedFileDescriptor" />
-				<property name="fieldSetMapper">
-					<bean
-						class="org.springframework.batch.sample.domain.multiline.AggregateItemFieldSetMapper">
-						<property name="delegate" ref="tradeLineMapper" />
-					</bean>
-				</property>
-			</bean>
-		</property>
+		<property name="lineMapper" ref="treeFileLineMapper" />
 	</bean>
+	
+	<bean id="writer" class="org.springframework.batch.sample.support.DummyItemWriter" />
 	
 	<bean id="treeFileLineMapper"
 	class="org.springframework.batch.item.file.mapping.PatternMatchingCompositeLineMapper">
@@ -46,6 +39,7 @@
 			<entry key="1*" value-ref="enterpriseTokenizer" />
 			<entry key="2*" value-ref="departmentTokenizer" />
 			<entry key="3*" value-ref="workerTokenizer" />
+			<entry key="*" value-ref="defaultTokenizer" />
 		</map>
 	</property>
 	<property name="fieldSetMappers">
@@ -53,6 +47,7 @@
 			<entry key="1*" value-ref="enterpriseFieldSetMapper" />
 			<entry key="2*" value-ref="departmentFieldSetMapper" />
 			<entry key="3*" value-ref="workerFieldSetMapper" />
+			<entry key="*" value-ref="defaultFieldSetMapper" />
 		</map>
 	</property>
 </bean>
@@ -85,4 +80,19 @@
 		<property name="names" value="type,name" />
 		<property name="columns" value="1, 2" />
 	</bean>
+	
+	<bean id="defaultTokenizer"
+		class="org.springframework.batch.item.file.transform.FixedLengthTokenizer">
+		<property name="names" value="type,trash" />
+		<property name="columns" value="1, 2" />
+	</bean>
+	
+	<bean id="enterpriseFieldSetMapper" class="org.springframework.batch.sample.domain.treereader.EnterpriseFieldSetMapper" />
+	
+	<bean id="departmentFieldSetMapper" class="org.springframework.batch.sample.domain.treereader.DepartmentFieldSetMapper" />
+	
+	<bean id="workerFieldSetMapper" class="org.springframework.batch.sample.domain.treereader.WorkerFieldSetMapper" />
+	
+	<bean id="defaultFieldSetMapper" class="org.springframework.batch.sample.domain.treereader.DefaultFieldSetMapper" />
+	
 </beans>

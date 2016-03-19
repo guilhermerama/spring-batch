@@ -33,6 +33,16 @@ public class TreeFileReader implements ItemReader<Enterprise>{
 	ItemReader<Line> delegate;
 
 	
+	public ItemReader<Line> getDelegate() {
+		return delegate;
+	}
+
+
+	public void setDelegate(ItemReader<Line> delegate) {
+		this.delegate = delegate;
+	}
+
+
 	@Override
 	public Enterprise read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
 		
@@ -65,6 +75,8 @@ public class TreeFileReader implements ItemReader<Enterprise>{
 				break;
 			
 			}
+
+			line = delegate.read();
 		}
 		
 		return enterprise;
